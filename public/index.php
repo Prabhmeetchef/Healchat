@@ -41,6 +41,7 @@
     const sendButton = document.getElementById('sendButton');
     const userMessageInput = document.getElementById('userMessage');
     const chatbox = document.getElementById('chatbox');
+    const messageHistory = [];
 
     sendButton.addEventListener('click', async () => {
         const message = userMessageInput.value.trim();
@@ -53,6 +54,9 @@
 
             // Clear input field
             userMessageInput.value = '';
+
+            // Add user message to history
+            messageHistory.push({ role: 'user', content: message });
 
             // Scroll to the bottom of the chat
             chatbox.scrollTop = chatbox.scrollHeight;
@@ -67,11 +71,9 @@
                     },
                     body: JSON.stringify({
                         model: 'zephyr-7b-beta-Q5_K_M', // Make sure this is the correct model
-                        messages: [
-                            { role: 'user', content: message }
-                        ],
+                        messages: messageHistory,  // Include the whole message history
                         max_tokens: 200,
-                        temperature: 0.5,
+                        temperature: 0.2,
                         top_k: 40,
                         top_p: 0.8,
                         stream: false // Set to false to get the full response at once
@@ -80,13 +82,17 @@
 
                 // Check if the response is ok
                 if (response.ok) {
-                    const data = await response.json(); const cleanedMessage = data.choices[0].message.content.replace(/\/INST/g, '');
+                    const data = await response.json(); 
+                    const cleanedMessage = data.choices[0].message.content.replace(/\/INST/g, '');
 
                     // Display the bot's response
                     const botMessage = document.createElement('div');
                     botMessage.classList.add('flex', 'items-start', 'space-x-2');
                     botMessage.innerHTML = `<div class="bg-blue-500 text-white p-2 rounded-lg">${data.choices[0].message.content}</div>`;
                     chatbox.appendChild(botMessage);
+
+                    // Add bot response to history
+                    messageHistory.push({ role: 'assistant', content: data.choices[0].message.content });
                 } else {
                     const errorMessage = document.createElement('div');
                     errorMessage.classList.add('flex', 'items-start', 'space-x-2');
